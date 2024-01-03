@@ -12,3 +12,4 @@ COPY . .
 
 # Define the command to run your application
 CMD ["python", "your_script.py"]
+
