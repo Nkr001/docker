@@ -18,7 +18,7 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t nkr/boto3:latest .
+          docker build -t nkr/boto3:latest -f test/Dockerfile test
           docker push nkr/boto3:latest
         env:
           DOCKER_CLI_AGGREGATE: 1
