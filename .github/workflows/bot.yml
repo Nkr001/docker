@@ -33,4 +33,4 @@ jobs:
 
       - name: Run kubeconform validation
         run: |
-          kubeconform -strict -summary -output text k8s/
+          kubeconform -strict -summary -output text test/
