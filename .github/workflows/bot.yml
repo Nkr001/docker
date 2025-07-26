@@ -1,25 +1,36 @@
-name: Docker Build and Push
+name: Validate Kubernetes Manifests
 
 on:
   push:
     paths:
-      - 'test/*'  # Adjust this based on your project structure
+      - 'test/**'  # Adjust to the directory where your manifests live
 
 jobs:
-  build-and-push:
+  validate-k8s:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Login to Docker Hub
-        run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.33.0'
 
-      - name: Build and Push Docker Image
+      - name: Validate Kubernetes YAMLs with kubectl dry-run
         run: |
-          docker build -t nkr/boto3:latest -f test/Dockerfile test
-          docker push nkr/boto3:latest
-        env:
-          DOCKER_CLI_AGGREGATE: 1
-          DOCKER_BUILDKIT: 1
+          for file in $(find k8s -name '*.yaml' -o -name '*.yml'); do
+            echo "Validating $file"
+            kubectl apply --dry-run=client --validate=true -f "$file"
+          done
+
+      - name: Install kubeconform
+        run: |
+          curl -L -o kubeconform.tar.gz https://github.com/yannh/kubeconform/releases/download/v0.6.3/kubeconform-linux-amd64.tar.gz
+          tar -xzf kubeconform.tar.gz
+          sudo mv kubeconform /usr/local/bin/
+
+      - name: Run kubeconform validation
+        run: |
+          kubeconform -strict -summary -output text k8s/
